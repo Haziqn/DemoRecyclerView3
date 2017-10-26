@@ -37,7 +37,6 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
     public ImageView imageView1;
 
     int totalCount = 0;
-    private File file = new File();
 
     public static Cursor cursorGroupCount = null;
     public static Cursor cursorAll = null;
@@ -79,11 +78,6 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
             case GROUP_TYPE:
                 View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_textview, parent, false);
                 textViewGroupname = itemView.findViewById(R.id.textView);
-                Size thumbnailSize = ViewUtils.getSquareSizeForWidth(Resources.getSystem().getDisplayMetrics().widthPixels / Constants.NUM_MEDIA_COLUMN);
-
-                ViewGroup.LayoutParams thumbnailLayoutParams = textViewGroupname.getLayoutParams();
-                thumbnailLayoutParams.width = thumbnailSize.getWidth();
-                thumbnailLayoutParams.height = thumbnailSize.getHeight();
 
                 GroupItemViewH groupItemViewH = new GroupItemViewH(itemView);
                 return groupItemViewH;
@@ -130,6 +124,7 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
                 final String imgURL = cursorAll.getString(columnIndex);
                 Log.d(TAG, "onBindViewHolder: ::imgURL : " + imgURL);
 //                Picasso.with(context).load(imgURL).into(imageView1);
+                imageView1.setImageResource(R.drawable.photo1);
             }
 
             return;
