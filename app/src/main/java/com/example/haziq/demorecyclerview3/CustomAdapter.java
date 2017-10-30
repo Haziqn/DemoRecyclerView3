@@ -3,10 +3,6 @@ package com.example.haziq.demorecyclerview3;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.Size;
@@ -15,12 +11,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
-
-import com.squareup.picasso.Picasso;
-
-import java.util.HashMap;
-import java.util.Map;
 
 
 /**
@@ -36,39 +26,42 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
     public TextView textViewGroupname;
     public ImageView imageView1;
 
-    int totalCount = 0;
+//    int totalCount = 0;
+//
+//    public static Cursor cursorGroupCount = null;
+//    public static Cursor cursorAll = null;
+//    private Context context = null;
 
-    public static Cursor cursorGroupCount = null;
-    public static Cursor cursorAll = null;
+    private int totalCount = 0;
+    private GroupedCursor groupedCursor;
 
-    private Context context = null;
 
-    static class PositionDetail{
-        boolean group;
-        int realPosition;
+//    static class PositionDetail{
+//        boolean group;
+//        int realPosition;
+//
+//        public PositionDetail(boolean group, int realPosition) {
+//            this.group = group;
+//            this.realPosition = realPosition;
+//        }
+//
+//        @Override
+//        public String toString() {
+//            return "PositionDetail{" +
+//                    "group=" + group +
+//                    ", realPosition=" + realPosition +
+//                    '}';
+//        }
+//    }
+//    static Map<Integer,PositionDetail> positionDetailMap = new HashMap<>();
 
-        public PositionDetail(boolean group, int realPosition) {
-            this.group = group;
-            this.realPosition = realPosition;
-        }
-
-        @Override
-        public String toString() {
-            return "PositionDetail{" +
-                    "group=" + group +
-                    ", realPosition=" + realPosition +
-                    '}';
-        }
-    }
-    static Map<Integer,PositionDetail> positionDetailMap = new HashMap<>();
-
-    public CustomAdapter(Context context, Cursor cursorGroupCount, Cursor cursorAll, int totalCount) {
-        this.cursorGroupCount = cursorGroupCount;
-        this.cursorAll = cursorAll;
+    public CustomAdapter(Cursor cursorGroupCount, Cursor cursorAll, int totalCount) {
         this.totalCount = totalCount;
-        this.context = context;
-
-        Log.d(TAG, "CustomAdapter: ::cursorAll count " + cursorAll.getCount());
+//        cursorGroupCount.moveToPosition(0);
+//        Log.d(TAG, "CustomAdapter: ::cursorGroupCount " + cursorGroupCount.getString(cursorGroupCount.getColumnIndex(FileSQLiteHelper.COLUMN_GROUP)));
+//        cursorGroupCount.moveToPosition(2);
+//        Log.d(TAG, "CustomAdapter: ::cursorGroupCount " + cursorGroupCount.getString(cursorGroupCount.getColumnIndex(FileSQLiteHelper.COLUMN_GROUP)));
+        groupedCursor = new GroupedCursor(cursorAll, cursorGroupCount, FileSQLiteHelper.COLUMN_FILE);
     }
 
     @Override
@@ -76,6 +69,8 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
 
         switch (viewType) {
             case GROUP_TYPE:
+                Log.d(TAG, "onCreateViewHolder: ::cursorType : item count in groups");
+
                 View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_textview, parent, false);
                 textViewGroupname = itemView.findViewById(R.id.textView);
 
@@ -83,6 +78,7 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
                 return groupItemViewH;
 
             case ITEM_TYPE:
+                Log.d(TAG, "onCreateViewHolder: ::cursorType : all rows");
                 View itemView1 = LayoutInflater.from(parent.getContext()).inflate(R.layout.row_imageview, parent, false);
                 imageView1 = itemView1.findViewById(R.id.imageView);
 
@@ -101,34 +97,37 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
 
-        //Type
-        for(int i = 0 ; i < cursorGroupCount.getCount() + cursorAll.getCount() ;i++){
-            getType(i);
+        if (groupedCursor.isGroup(position)) {
+
+            Cursor cursor = groupedCursor.moveToPosition(position);
+            Log.d(TAG, "onBindViewHolder: ::cursor : " + cursor);
+
+            Log.d(TAG, "onBindViewHolder: ::position : " + position);
+
+            Log.d(TAG, "onBindViewHolder: ::cursor count : " + cursor.getCount());
+
+            int columnIndex = cursor.getColumnIndex(FileSQLiteHelper.COLUMN_GROUP);
+            String groupName = cursor.getString(columnIndex);
+            Log.d(TAG, "onBindViewHolder: ::groupName : " + groupName);
+            holder.textViewGroupName.setText(groupName);
+
         }
+        else {
 
-        //Group or Item
-        for(int i = 0 ; i < cursorGroupCount.getCount() + cursorAll.getCount() ;i++){
-            getItemOrGroup(i);
-        }
+            Cursor cursor = groupedCursor.moveToPosition(position);
+            if (cursor != null) {
+                int columnIndex = cursor.getColumnIndex(FileSQLiteHelper.COLUMN_FILE);
+                Log.d(TAG, "onBindViewHolder: ::image columnIndex : " + columnIndex);
 
-        PositionDetail positionDetail = positionDetailMap.get(position);
-        if(positionDetail != null){
-            if (positionDetail.group){
-                cursorGroupCount.moveToPosition(positionDetail.realPosition);
-                int columnIndex = cursorGroupCount.getColumnIndex(FileSQLiteHelper.COLUMN_GROUP);
-                holder.textViewGroupname.setText(cursorGroupCount.getString(columnIndex));
-
-            }else{
-                cursorAll.moveToPosition(positionDetail.realPosition);
-                int columnIndex = cursorAll.getColumnIndex(FileSQLiteHelper.COLUMN_FILE);
-                final String imgURL = cursorAll.getString(columnIndex);
+                final String imgURL = cursor.getString(columnIndex);
                 Log.d(TAG, "onBindViewHolder: ::imgURL : " + imgURL);
-//                Picasso.with(context).load(imgURL).into(imageView1);
+
                 imageView1.setImageResource(R.drawable.photo1);
             }
 
-            return;
         }
+
+        return;
 
 //        if (cursorGroupCount != null && cursorGroupCount.moveToFirst()) {
 //            int total = 0;
@@ -147,7 +146,7 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
 //                        int columnIndex1 = cursorGroupCount.getColumnIndex(FileSQLiteHelper.COLUMN_GROUP);
 //                        String itemGroupName = cursorGroupCount.getString(columnIndex1);
 //                        Log.d(TAG, "onBindViewHolder: ::itemGroupName " + itemGroupName);
-//                        holder.textViewGroupname.setText(itemGroupName);
+//                        holder.textViewGroupName.setText(itemGroupName);
 //                        Toast.makeText(context, itemGroupName, Toast.LENGTH_SHORT).show();
 //                    }
 //
@@ -247,63 +246,63 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
 
     }
 
-    private static void getItemOrGroup(int position) {
-        PositionDetail positionDetail = positionDetailMap.get(position);
-        if(positionDetail != null){
-            if (positionDetail.group){
-                System.out.println(position + "\t" + cursorGroupCount.moveToPosition(positionDetail.realPosition));
-            }else{
-                System.out.println(position + "\t" + cursorAll.moveToPosition(positionDetail.realPosition));
-            }
+//    private static void getItemOrGroup(int position) {
+//        PositionDetail positionDetail = positionDetailMap.get(position);
+//        if (positionDetail != null) {
+//            if (positionDetail.group) {
+//                System.out.println(position + "\t" + cursorGroupCount.moveToPosition(positionDetail.realPosition));
+//            } else {
+//                System.out.println(position + "\t" + cursorAll.moveToPosition(positionDetail.realPosition));
+//            }
+//
+//            return;
+//        }
+//        getPositionDetail(position);
+//
+//        PositionDetail pd = positionDetailMap.get(position);
+//        if (pd.group) {
+//            System.out.println(position + " testing 1 \t" + cursorGroupCount.moveToPosition(positionDetail.realPosition));
+//        } else {
+//            System.out.println(position + "pulau ubin \t" + cursorAll.moveToPosition(positionDetail.realPosition));
+//        }
+//    }
 
-            return;
-        }
-        getPositionDetail(position);
+//    private static void getPositionDetail(int position) {
+//        int total = 0;
+//        int groupIndex = 0;
+//        boolean isGroup = false;
+//        for (; groupIndex < cursorGroupCount.getCount(); groupIndex++) {
+//            if (position == total) {
+//                isGroup = true;
+//                break;
+//            }
+//
+//            cursorGroupCount.moveToPosition(groupIndex);
+//            int columnIndex = cursorGroupCount.getColumnIndex("COUNT(" + FileSQLiteHelper.COLUMN_FILE + ")");
+//
+//            total += cursorGroupCount.getInt(columnIndex) + 1;
+//            if (position < total) {
+//                break;
+//            }
+//        }
+//        if (isGroup) {
+//            positionDetailMap.put(position, new PositionDetail(isGroup, groupIndex));
+//        } else {
+//            positionDetailMap.put(position, new PositionDetail(isGroup, position - groupIndex - 1));
+//        }
+//    }
 
-        PositionDetail pd = positionDetailMap.get(position);
-        if (pd.group){
-            System.out.println(position + "\t" + cursorGroupCount.moveToPosition(positionDetail.realPosition));
-        }else{
-            System.out.println(position + "\t" + cursorAll.moveToPosition(positionDetail.realPosition));
-        }
-    }
-
-    private static void getPositionDetail(int position) {
-        int total = 0;
-        int groupIndex = 0;
-        boolean isGroup = false;
-        for(; groupIndex < cursorGroupCount.getCount() ; groupIndex++){
-            if( position == total){
-                isGroup = true;
-                break;
-            }
-
-            cursorGroupCount.moveToPosition(groupIndex);
-            int columnIndex = cursorGroupCount.getColumnIndex("COUNT(" + FileSQLiteHelper.COLUMN_FILE + ")");
-
-            total += cursorGroupCount.getInt(columnIndex) + 1;
-            if( position < total){
-                break;
-            }
-        }
-        if(isGroup){
-            positionDetailMap.put(position,new PositionDetail(isGroup,groupIndex));
-        }else{
-            positionDetailMap.put(position,new PositionDetail(isGroup,position - groupIndex - 1));
-        }
-    }
-
-    private static void getType(int position) {
-        PositionDetail positionDetail = positionDetailMap.get(position);
-        if(positionDetail != null){
-            System.out.println( position + "\t" +positionDetail);
-            return;
-        }
-
-        getPositionDetail(position);
-        System.out.println(position + "\t" + positionDetailMap.get(position));
-
-    }
+//    private static void getType(int position) {
+//        PositionDetail positionDetail = positionDetailMap.get(position);
+//        if (positionDetail != null) {
+//            System.out.println(position + "\t" + positionDetail);
+//            return;
+//        }
+//
+//        getPositionDetail(position);
+//        System.out.println(position + "\t" + positionDetailMap.get(position));
+//
+//    }
 
     @Override
     public int getItemCount() {
@@ -314,30 +313,15 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
 
     public int getItemViewType(int position) {
 
-        int totalItemCount = 0;
-
-        if (cursorGroupCount != null && cursorGroupCount.moveToFirst()) {
-            int total = 0;
-            do {
-                int columnIndex = cursorGroupCount.getColumnIndex("COUNT(" + FileSQLiteHelper.COLUMN_FILE + ")");
-
-                totalItemCount += cursorGroupCount.getInt(columnIndex) + 1;
-
-                if (position == 0 || position == totalItemCount) {
-
-                    return GROUP_TYPE;
-                }
-
-                total += cursorGroupCount.getInt(columnIndex);
-            } while (cursorGroupCount.moveToNext());
-        }
-
-
-        return ITEM_TYPE;
+       if(groupedCursor.isGroup(position)){
+           return GROUP_TYPE;
+       } else {
+           return ITEM_TYPE;
+       }
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
-        public TextView textViewGroupname;
+        public TextView textViewGroupName;
         public ImageView imageView1;
 
         public ViewHolder(View itemView) {
@@ -358,7 +342,7 @@ public class CustomAdapter extends RecyclerView.Adapter<CustomAdapter.ViewHolder
 
         public GroupItemViewH(View itemView) {
             super(itemView);
-            textViewGroupname = (TextView) itemView.findViewById(R.id.textView);
+            textViewGroupName = (TextView) itemView.findViewById(R.id.textView);
         }
     }
 

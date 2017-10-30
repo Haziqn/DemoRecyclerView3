@@ -37,11 +37,11 @@ public class MainActivity extends AppCompatActivity {
         String[] projection = {"COUNT(" + FileSQLiteHelper.COLUMN_FILE + ")", FileSQLiteHelper.COLUMN_GROUP};
         //retrieving how many files there are in each group
         cursorGroupCount = getContentResolver().query(Uri.parse("content://com.example.haziq.demorecyclerview3.FileContentProvider/files/1"), projection, null, null, FileSQLiteHelper.COLUMN_GROUP + " ASC");
-        Log.d(TAG, "onCreate: cursorGroupCount " + cursorGroupCount.getCount());
-        //retrieving all files from each group
+//        Log.d(TAG, "onCreate: cursorGroupCount " + cursorGroupCount.getCount());
+//        //retrieving all files from each group
         cursorAll = managedQuery(FileContentProvider.CONTENT_URI, FileSQLiteHelper.allColumns, null, null, FileSQLiteHelper.COLUMN_GROUP + " ASC");
         Log.d(TAG, "onCreate: cursorAll count " + cursorAll.getCount());
-
+//
         //retrieve item count in each group
         if (cursorGroupCount != null && cursorGroupCount.moveToFirst()) {
             do {
@@ -50,32 +50,32 @@ public class MainActivity extends AppCompatActivity {
 
                 for (String column:
                         columns) {
-                    Log.d(TAG, "onCreate: column " + column);
+//                    Log.d(TAG, "onCreate: column " + column);
                 }
 
                 int columnIndex = cursorGroupCount.getColumnIndex("COUNT(" + FileSQLiteHelper.COLUMN_FILE + ")");
-                Log.d(TAG, "onCreate: column Index " + columnIndex);
+//                Log.d(TAG, "onCreate: column Index " + columnIndex);
                 int itemCountInGroup = cursorGroupCount.getInt(columnIndex);
                 totalCount += itemCountInGroup;
-                Log.d(TAG, "onCreate: ::retrieving item count in group : " + itemCountInGroup);
+//                Log.d(TAG, "onCreate: ::retrieving item count in group : " + itemCountInGroup);
 
             } while (cursorGroupCount.moveToNext());
         }
         totalCount += cursorGroupCount.getCount();
-        Log.d(TAG, "onCreate: ::total count : " + totalCount);
+////        Log.d(TAG, "onCreate: ::total count : " + totalCount);
+//
+//        if (cursorAll != null && cursorAll.moveToFirst()) {
+//            do {
+//                int columnIndex = cursorAll.getColumnIndex(FileSQLiteHelper.COLUMN_FILE );
+//
+//                String itemInGroup = cursorAll.getString(columnIndex);
+//
+////                Log.d(TAG, "onCreate: ::retrieving item in group : " +  itemInGroup);
+//
+//            } while (cursorAll.moveToNext());
+//        }
 
-        if (cursorAll != null && cursorAll.moveToFirst()) {
-            do {
-                int columnIndex = cursorAll.getColumnIndex(FileSQLiteHelper.COLUMN_FILE );
-
-                String itemInGroup = cursorAll.getString(columnIndex);
-
-                Log.d(TAG, "onCreate: ::retrieving item in group : " +  itemInGroup);
-
-            } while (cursorAll.moveToNext());
-        }
-
-        customAdapter = new CustomAdapter(MainActivity.this, cursorGroupCount, cursorAll, totalCount);
+        customAdapter = new CustomAdapter(cursorGroupCount, cursorAll, totalCount);
         recyclerView.setHasFixedSize(true);
         final GridLayoutManager layout = new GridLayoutManager(MainActivity.this, 4);
         layout.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
