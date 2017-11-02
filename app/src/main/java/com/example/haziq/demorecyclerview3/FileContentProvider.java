@@ -6,11 +6,14 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.UriMatcher;
 import android.content.pm.ProviderInfo;
+import android.database.ContentObserver;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -28,6 +31,9 @@ public class FileContentProvider extends ContentProvider {
     static final String PROVIDER_NAME = "com.example.haziq.demorecyclerview3.FileContentProvider";
     static final String URL = "content://" + PROVIDER_NAME + "/files";
     static final Uri CONTENT_URI = Uri.parse(URL);
+
+    private android.os.Handler mainThreadHandler = new android.os.Handler(Looper.getMainLooper());
+    private FileContentObserver fileContentObserver = new FileContentObserver(mainThreadHandler);
 
     private static HashMap<String, String> FILES_PROJECTION_MAP;
 
@@ -66,21 +72,27 @@ public class FileContentProvider extends ContentProvider {
         SQLiteQueryBuilder sqb = new SQLiteQueryBuilder();
         sqb.setTables(FileSQLiteHelper.TABLE_GROUPS);
 
+        Cursor cursor = null;
+
         switch (uriMatcher.match(uri)) {
             case STUDENTS:
                 sqb.setProjectionMap(FILES_PROJECTION_MAP);
-                Cursor cursor = sqb.query(sqLiteDatabase, projection, selection,
+                cursor = sqb.query(sqLiteDatabase, projection, selection,
                         selectionArgs,null, null, sortOrder);
                 Log.d(TAG, "query: uri matches");
+
                 return cursor;
             case STUDENT_ID:
                 sqb.setProjectionMap(FILES_PROJECTION_MAP);
-                Cursor cursor2 = sqb.query(sqLiteDatabase, projection, selection,
+                cursor = sqb.query(sqLiteDatabase, projection, selection,
                         selectionArgs,FileSQLiteHelper.COLUMN_GROUP, null, sortOrder);
                 Log.d(TAG, "query: uri2 matches");
-                return cursor2;
+
+                return cursor;
 
         }
+
+        cursor.setNotificationUri(getContext().getContentResolver(), uri);
 
         return null;
     }
@@ -106,6 +118,7 @@ public class FileContentProvider extends ContentProvider {
             Uri _uri = ContentUris.withAppendedId(CONTENT_URI, rowId);
             getContext().getContentResolver().notifyChange(_uri, null);
             Log.d(TAG, "insert: ::_uri : " + _uri);
+
             return _uri;
         }
 
@@ -120,5 +133,21 @@ public class FileContentProvider extends ContentProvider {
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues contentValues, @Nullable String s, @Nullable String[] strings) {
         return 0;
+    }
+
+    static class FileContentObserver extends ContentObserver {
+
+        FileContentObserver(Handler h) {
+            super(h);
+        }
+
+        @Override
+        public void onChange(boolean selfChange) {
+            super.onChange(selfChange);
+
+            Log.d("FileContentObserver", "--------------------Data Changed");
+            //notifyDataSetChange
+
+        }
     }
 }
